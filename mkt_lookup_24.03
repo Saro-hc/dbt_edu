@@ -1,0 +1,90 @@
+create or replace view MOBILITY_TRADER.HEYCAR_REPORT.MKT_CHANNELS_LOOKUP_FR(
+	MKT_STAT_DAY,
+	COUNTRY_CODE,
+	MKT_SOURCE,
+	ACCOUNT_ID,
+	CAMPAIGN_ID,
+	CAMPAIGN_NAME,
+	HELPER,
+	MKT_CHANNEL_GROUPING_NEW
+) as 
+    (
+   
+        SELECT
+        distinct 
+   mkt_stat_day,
+   country_code,
+  mkt_source,
+  account_id,
+  campaign_id,
+  campaign_name,
+CONCAT(mkt_stat_day,country_code,mkt_source,nvl(campaign_id,'campaign_id'),nvl(campaign_name,'campaign_name'),nvl(account_id,'account_id')) AS helper,
+           CASE
+                 WHEN (LOWER(mkt_source) = 'google'
+                    OR LOWER(mkt_source) = 'bing'
+                    OR LOWER(mkt_source) = 'google_ads'
+                    OR LOWER(mkt_source) = 'bing_ads')
+                    AND campaign_name LIKE '%_BRA%'                                             THEN 'Paid Search - Brand'
+      
+                WHEN LOWER(mkt_source) IN ('google', 'google_ads', 'bing', 'bing_ads')
+                    AND campaign_name LIKE '%_MK_%'                                             THEN 'Paid Search - Make Models'
+
+                WHEN (LOWER(mkt_source) = 'google'
+                    OR LOWER(mkt_source) = 'bing'
+                    OR LOWER(mkt_source) = 'google_ads'
+                    OR LOWER(mkt_source) = 'bing_ads')
+                    AND (campaign_name NOT LIKE '%FR_CLS_BRA%' OR campaign_name IS NULL)         THEN 'Paid Search - Non Brand Generic'
+
+               
+                WHEN LOWER(mkt_source) = 'rtbhouse'
+                                          AND campaign_name LIKE '%prospecting%'                    THEN 'Display - Prospecting'
+
+                WHEN LOWER(mkt_source) = 'rtbhouse'
+                    AND campaign_name LIKE '%retargeting%'         THEN 'Retargeting'
+
+        WHEN  LOWER(mkt_source) = 'criteo' 
+        AND campaign_name LIKE '%_PRO%' 
+        THEN    'Display - Prospecting'    
+        
+        
+        WHEN LOWER(mkt_source) = 'criteo'
+                                  THEN  'Display - Retargeting'
+
+              WHEN (LOWER(mkt_source) = 'google'
+                    OR LOWER(mkt_source) = 'bing'
+                    OR LOWER(mkt_source) = 'google_ads'
+                    OR LOWER(mkt_source) = 'bing_ads') AND account_id = '6239023097'                                         THEN 'Display - Brand'
+
+  
+
+                WHEN (LOWER(mkt_source) = 'leparking'
+                    OR LOWER(mkt_source) LIKE '%autouncle%'
+                    OR LOWER(mkt_source) = 'thribee')
+                                                                                                 THEN 'Metasearch'
+
+                WHEN LOWER(mkt_source) = 'facebook'
+       
+                    AND (campaign_name LIKE '%_PRO_%'
+                        OR campaign_name IS NULL
+                        OR campaign_name = 'FR_CLS')
+                                                                                                 THEN 'Paid Social - Prospecting'
+
+                WHEN (LOWER(mkt_source) = 'facebook'
+                       OR LOWER(mkt_source) = 'instagram')
+                    
+                    AND (campaign_name LIKE '%_RET_%'
+                        OR campaign_name LIKE '%_REM%')
+                         
+                                                                                                 THEN 'Paid Social - Retargeting'
+                --
+                
+               
+
+
+                ELSE 'Other'
+            END                                         AS mkt_channel_grouping_new
+
+        FROM mobility_trader.heycar.marketing 
+        
+    
+             WHERE country_code = 'fr');
