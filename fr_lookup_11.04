@@ -1,0 +1,163 @@
+create or replace view MOBILITY_TRADER.HEYCAR_REPORT.SESSION_CHANNELS_LOOKUP_FR(
+	SESSION_DAY,
+	SESSION_ID,
+	SESSION_DAY_ID,
+	COUNTRY_CODE,
+	CAMPAIGN_NAME,
+	MKT_CHANNEL_GROUPING_NEW,
+	COUNTRY_CODE_IDF,
+	VERTICAL_IDF,
+	GOAL_IDF,
+	IDF_4,
+	IDF_5,
+	FBCLID,
+	GCLID,
+	MSCLKID
+) as
+    (
+   
+        SELECT
+            session_day
+          , session_id
+          , session_day_id
+          , country_code
+          , COALESCE(mkt_campaign_name, m.name) AS campaign_name
+          , CASE
+                 WHEN (LOWER(mkt_source) = 'google'
+                    OR LOWER(mkt_source) = 'bing'
+                    OR LOWER(mkt_source) = 'google_ads'
+                    OR LOWER(mkt_source) = 'bing_ads')
+                    AND LOWER(mkt_medium) = 'cpc'
+                    AND campaign_name LIKE '%_BRA%'                                             THEN 'Paid Search - Brand'
+      
+                WHEN LOWER(mkt_source) IN ('google', 'google_ads', 'bing', 'bing_ads')
+                    AND mkt_medium ILIKE 'cpc'
+                    AND campaign_name LIKE '%_MK_%'                                             THEN 'Paid Search - Make Models'
+
+                WHEN (LOWER(mkt_source) = 'google'
+                    OR LOWER(mkt_source) = 'bing'
+                    OR LOWER(mkt_source) = 'google_ads'
+                    OR LOWER(mkt_source) = 'bing_ads')
+                    AND LOWER(mkt_medium) = 'cpc'
+                    AND (campaign_name NOT LIKE '%FR_CLS_BRA%' OR campaign_name IS NULL)         THEN 'Paid Search - Non Brand Generic'
+
+               
+                WHEN LOWER(mkt_source) = 'rtbhouse'
+                    AND LOWER(mkt_medium) = 'display'                                            THEN 'Display - Prospecting'
+
+                WHEN LOWER(mkt_source) = 'rtbhouse'
+                    AND (LOWER(mkt_medium) = 'rem' OR LOWER(mkt_medium) = 'retargeting')         THEN 'Display - Retargeting'
+        
+        
+         WHEN LOWER(mkt_source) = 'criteo' and LOWER(mkt_medium) = 'display'
+                                  THEN  'Display - Prospecting'  
+
+                WHEN LOWER(mkt_source) = 'criteo'
+                    AND (LOWER(mkt_medium) = 'logo'
+                        OR LOWER(mkt_medium) = 'rem'
+                        OR LOWER(mkt_medium) = 'affiliate')                                      THEN  'Display - Retargeting'
+
+                WHEN LOWER(mkt_source) like  '%google%'
+                    AND LOWER(mkt_medium) = 'display'                                            THEN 'Display - Brand'
+
+                WHEN LOWER(mkt_source) = 'awin'
+                    AND LOWER(mkt_medium) = 'affiliate'                                          THEN 'Affiliates'
+
+                WHEN (LOWER(mkt_source) = 'leparking'
+                    OR LOWER(mkt_source) LIKE '%autouncle%'
+                    OR LOWER(mkt_source) = 'thribee'
+                    OR LOWER(mkt_source) = 'mitula'
+                    OR LOWER(mkt_source) = 'rubrikk'
+                    OR LOWER(mkt_source) = 'trovit')
+                    AND (LOWER(mkt_medium) = 'affiliate'
+                        OR LOWER(mkt_medium) = 'meta'
+                        OR LOWER(mkt_medium) = 'cpc'
+                        OR LOWER(mkt_medium) = 'metasearch'
+                        OR LOWER(mkt_medium) = 'referral')
+                    -- AND (mkt_campaign_name like '%listin%' or mkt_campaign_name = 'premium')
+                                                                                                 THEN 'Metasearch'
+
+                WHEN LOWER(mkt_source) = 'facebook'
+                    AND (LOWER(mkt_medium) = 'paidsocial'
+                        OR LOWER(mkt_medium) = 'cpc')
+                    AND (campaign_name LIKE '%_PRO_%'
+                        OR campaign_name IS NULL
+                        OR campaign_name = 'FR_CLS')
+                                                                                                 THEN 'Paid Social - Prospecting'
+
+                WHEN (LOWER(mkt_source) = 'facebook'
+                       OR LOWER(mkt_source) = 'instagram')
+                    AND (LOWER(mkt_medium) = 'paidsocial'
+                        OR LOWER(mkt_medium) = 'cpc')
+                    AND (campaign_name LIKE '%_RET_%'
+                        OR campaign_name LIKE '%_REM%')
+                         
+                                                                                                 THEN 'Paid Social - Retargeting'
+                --
+                WHEN LOWER(mkt_source) = 'sociabbleapp'
+                    AND LOWER(mkt_medium) = 'social'                                             THEN 'Organic Social'
+
+                WHEN (LOWER(mkt_source) = 'sendinblue'
+                    OR LOWER(mkt_source) = 'crm'
+                    OR LOWER(mkt_source) = 'hs_automation'
+                    OR LOWER(mkt_source) = 'email')
+                    AND (LOWER(mkt_medium) = 'email'
+                         OR LOWER(mkt_medium) = 'crm'
+                         OR LOWER(mkt_medium) = 'tm')                                               THEN 'CRM'
+
+                WHEN LOWER(mkt_source) = 'lifull-connect'
+                    AND LOWER(mkt_medium) = 'cpc'                                                THEN
+                    'Paid Search - Non Brand'
+
+                WHEN LOWER(mkt_source) = 'instagram'
+                    AND (LOWER(mkt_medium) = 'cpc' OR LOWER(mkt_medium) = 'paidsocial')
+                    AND (campaign_name LIKE '%_PRO_%' OR campaign_name = '[M]_[Audi]')           THEN    'Paid Social - Prospecting'
+
+//                WHEN LOWER(mkt_source) = 'instagram'
+//                    AND LOWER(mkt_medium) = 'cpc'
+//                    AND (campaign_name LIKE '%_RET_%'
+//                        OR campaign_name LIKE '%_REM_%')                                         THEN  'Paid Social - Retargeting'
+
+                WHEN (LOWER(mkt_source) = 'instagram'
+                    OR LOWER(mkt_source) = 'facebook'
+                    OR LOWER(mkt_source) = 'instagram stories'
+                    OR LOWER(mkt_source) = 'igshopping')
+                    AND LOWER(mkt_medium) = 'organic'                                            THEN 'Organic Social'
+
+                WHEN LOWER(mkt_source) = 'direct'                                                THEN 'Direct'
+               
+                WHEN mkt_medium ILIKE 'referral'                                                 THEN 'Referral'
+
+                WHEN (LOWER(mkt_source) = 'duckduckgo'
+                    OR LOWER(mkt_source) = 'google'
+                    OR LOWER(mkt_source) = 'yahoo'
+                    OR LOWER(mkt_source) = 'bing')
+                    AND LOWER(mkt_medium) = 'organic'
+                    AND landing_page_type ILIKE 'home'
+                                                                                                 THEN 'Organic Search - Homepage'
+
+                WHEN (LOWER(mkt_source) = 'duckduckgo'
+                    OR LOWER(mkt_source) = 'google'
+                    OR LOWER(mkt_source) = 'yahoo'
+                    OR LOWER(mkt_source) = 'bing')
+                    AND LOWER(mkt_medium) = 'organic'
+                                                                                                 THEN 'Organic Search - Non Homepage'
+
+                ELSE 'Other'
+            END                                         AS mkt_channel_grouping_new
+          , SPLIT_PART(campaign_name, '_', 1)       AS country_code_idf
+          , SPLIT_PART(campaign_name, '_', 2)       AS vertical_idf
+          , SPLIT_PART(campaign_name, '_', 3)       AS goal_idf
+          , SPLIT_PART(campaign_name, '_', 4)       AS idf_4
+          , SPLIT_PART(campaign_name, '_', 5)       AS idf_5
+          , SPLIT_PART(landing_page_url, 'fbclid=', 2)  AS fbclid
+          , SPLIT_PART(landing_page_url, 'gclid=', 2)   AS gclid
+          , SPLIT_PART(landing_page_url, 'msclkid=', 2) AS msclkid
+
+        FROM mobility_trader.heycar.session
+        
+             LEFT JOIN segment.google_ads_fr.click_performance_reports cpr
+                ON SPLIT_PART(landing_page_url, 'gclid=', 2) = cpr.gcl_id
+             LEFT JOIN segment.google_ads_fr.campaigns m
+                ON cpr.campaign_id = m.id 
+             WHERE country_code = 'fr');
